@@ -1,0 +1,11 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*/Archive/*
+0_data/data*
+1_code/jags*
+2_output/Appendix*
+2_output/Fig*
+2_output/output*
+2_output/Table*
