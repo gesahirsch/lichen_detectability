@@ -1,0 +1,74 @@
+---
+title: "Workflow"
+author: "Gesa von Hirschheydt"
+date: "2023-05-23"
+output: html_document
+---
+
+The code in this file will, if run in the given order, reproduce the figures and tables published in the article:
+
+von Hirschheydt, G., Kéry, M., Ekman, S., Stofer, S., Dietrich, M., Keller, C., Scheidegger, C.: **Occupancy models reveal limited detectability of lichens in a standardised large-scale monitoring**.
+
+The user can either run this markdown file or use it as a guide in which order the individual R-files should be executed.
+
+
+# 1. Select data and bundle it into a list for JAGS
+
+Running the code in this section will produce 1 file and place it into the folder `0_data`:
+
+ * data.RData
+
+Running this code chunk takes < 1 minute.
+
+```{r BundleData}
+source('1_code/0_bundle_data.R')
+```
+
+
+# 2. Fit occupancy models
+
+There are 4 occupancy models to fit which all share the same likelihood. Running the code in this section will produce 4 text files with the JAGS models and 4 RData files with the model outputs. The text files will be placed into the folder `1_code`:
+
+ * jags_model.txt
+ * jags_model_gof.txt
+ * jags_model_priors1.txt
+ * jags_model_priors2.txt
+
+And the RData files will be placed into the folder `2_output`:
+
+ * output_jags_model.RData
+ * output_jags_model_gof.RData
+ * output_jags_model_priors1.RData
+ * output_jags_model_priors2.RData
+
+**IMPORTANT:** Each line in the following chunk will take **ca. 3-3.5 days** to run! We therefore highly recommend that you run the 4 R-files in parallel on different cores using a high performance cluster.
+
+```{r FitOccupancyModels}
+source('1_code/1a_run_jags_model.R')
+source('1_code/1b_run_jags_model_gof.R')
+source('1_code/1c_run_jags_model_alternative_priors1.R')
+source('1_code/1d_run_jags_model_alternative_priors2.R')
+```
+
+# 3. Make figures and extract tables (and numbers)
+
+Running the code chunk in this section will produce tables and figures from the main manuscript and the supplementary materials, and place them into the folder `2_output`:
+
+ * Appendix1_Fig.S1_Illustration_prior1.tif
+ * Appendix1_Fig.S2_Illustration_prior2.tif
+ * Appendix1_Fig.S3_Prior_sensitivity_assessment.tif
+ * Appendix2_Table.S1_Observer-species_specific_detectabilities.csv
+ * Appendix3_Fig.S1_Species_richness_per_site.tif
+ * Fig.2_Observer-specific_detectability_and_variance.tif
+ * Fig.3_Effect_of_identifiability_experience_and_conspicuousness.tif
+ * Fig.4_Detection_vs_occupancy.tif
+ * Fig.5_Occurrences_per_species.tif
+ * Table.1_Posterior_estimates_main_parameters.csv
+
+Running this code chunk takes approximately 2 minutes.
+
+```{r FiguresAndTables}
+source('1_code/2_extract_results_and_make_figures.R')
+```
+
+To compute the numbers used in the text of the manuscript, the user has to open the file in R, execute the respective lines and find the computed value in the console.
