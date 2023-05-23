@@ -1,0 +1,3 @@
+License
+Currently (i.e., for the period of manuscript review), the data and code provided in this repository underlies strict copyright!
+Copyright (c) 2023 Gesa von Hirschheydt et al.
