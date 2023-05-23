@@ -1,6 +1,9 @@
-LICHEN_DETECTABILITY
+# LICHEN_DETECTABILITY
+---------------------------------------------------------------------------------------------------
 
 This repository contains the cleaned data and all the code used for the data analysis and the generation of the figures and numbers presented in the article von Hirschheydt, G., Kéry, M., Ekman, S., Stofer, S., Dietrich, M., Keller, C., Scheidegger, C. Occupancy models reveal limited detectability of lichens in a standardised large-scale monitoring.
+
+All data and code currently underlies a strict copyright.
 
 
 #  REPRODUCIBILITY OF RESULTS  ##
