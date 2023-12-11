@@ -516,6 +516,71 @@ dev.off()
 
 
 
+#  Appendix 4 - Posterior predictive checks (Bayesian p-values)  ####
+
+load('2_output/output.jags_model_gof.RData')
+ifelse(sum(unlist(output$Rhat) > 1.1)==0, paste("Successful convergence based on Rhat values (all < 1.1)."), paste("Rhat values indicate convergence failure."))
+# print(output, 2)
+
+out <- data.frame(output$sims.list)
+params.titles <- colnames(out)
+
+
+# set threshold
+# threshold <- 0.05 # often deemed to restrictive
+threshold <- 0.1  # more conservative and reliable
+
+
+# p.mean
+start <- match("p.mean.1", colnames(out))
+end <- match("p.mean.373", colnames(out))
+p.means <- output$summary[start:end, "mean"]
+
+par(mfrow=c(1,2), mar=c(3,5,5,1))
+hist(p.means, breaks=51, xlim=c(0,1), las=1, cex.lab=1.2, cex.axis=1.1, xlab='',
+     main="Bayesian p-value for \nmean number of detections per species")
+abline(v=c(threshold,(1-threshold)), col="red", lwd=2)
+text(x=0, y=2, labels=sum(p.means<=threshold), pos=3, cex=1.1, col="red")
+text(x=1, y=2, labels=sum(p.means>=(1-threshold)), pos=3, cex=1.1, col="red")
+
+# which species lie outside the acceptable range?
+which(p.means<threshold|p.means>=(1-threshold))
+dimnames(data$y)[[3]][which(p.means<=threshold|p.means>=(1-threshold))]
+
+# how many times were these species observed?
+n.occ.obs <- apply(data$y, 3, sum, na.rm=T)
+# n.occ.obs[which(p.means<=threshold|p.means>=(1-threshold))]
+# n.occ.obs[which(p.means<=threshold)]
+enframe(n.occ.obs, name="var")[which(p.means<=threshold),]
+enframe(n.occ.obs, name="var")[which(p.means>=(1-threshold)),]
+
+
+# p.cv
+start <- match("p.cv.1", colnames(out))
+end <- match("p.cv.373", colnames(out))
+p.cvs <- output$summary[start:end, "mean"]
+
+hist(p.cvs, breaks=50, xlim=c(0,1), las=1, cex.lab=1.2, cex.axis=1.1, xlab='',
+     main="Bayesian p-value for \nsd in number of detections per species")
+abline(v=c(threshold,(1-threshold)), col="red", lwd=2)
+text(x=0, y=2, labels=sum(p.cvs<=threshold), pos=3, cex=1.1, col="red")
+text(x=1, y=2, labels=sum(p.cvs>=(1-threshold)), pos=3, cex=1.1, col="red")
+
+# which species lie outside the acceptable range?
+which(p.cvs<threshold|p.cvs>=(1-threshold))
+dimnames(data$y)[[3]][which(p.cvs<=threshold|p.cvs>=(1-threshold))]
+dimnames(data$y)[[3]][which(p.cvs<=threshold)]
+dimnames(data$y)[[3]][which(p.cvs>=(1-threshold))]
+
+n.occ.obs <- apply(data$y, 3, sum, na.rm=T)
+# n.occ.obs[which(p.cvs<=threshold|p.cvs>=(1-threshold))]
+# n.occ.obs[which(p.cvs<=threshold)]
+enframe(n.occ.obs, name="var")[which(p.cvs<=threshold),]
+enframe(n.occ.obs, name="var")[which(p.cvs>=(1-threshold)),]
+
+
+
+
 #  Summary numbers for manuscript  ####
 
 # RESULTS
