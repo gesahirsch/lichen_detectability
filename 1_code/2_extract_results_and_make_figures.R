@@ -663,7 +663,7 @@ quantile(help3, probs=c(0.025, 0.5, 0.975)) %>% round(3)
 # species with the lowest detectability across observers
 mean.detectability %>% filter(mean==min(mean.detectability$mean)) %>% select(mean)
 
-# species with the lowest detectability across observers
+# species with the highest detectability across observers
 mean.detectability %>% filter(mean==max(mean.detectability$mean)) %>% select(mean)
 
 # average detection probability of conspicuous species
