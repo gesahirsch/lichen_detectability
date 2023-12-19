@@ -82,7 +82,7 @@ mapPalette <- colorRampPalette(c('khaki1','khaki3','khaki4','mediumorchid1','med
 
 # Mean detection probabilities per observer
 plot1 <- ggplot(df, aes(x=p, y=observer, fill=observer)) +
-  xlab('Estimated detectability') + ylab('') +
+  xlab('Estimated detection probability') + ylab('') +
   geom_density_ridges(alpha=0.8) +
   scale_fill_manual(values=mapPalette(7)) +
   theme_ridges() +
