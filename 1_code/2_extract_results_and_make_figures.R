@@ -92,7 +92,7 @@ plot1 <- ggplot(df, aes(x=p, y=observer, fill=observer)) +
         ,axis.text=element_text(size=60) # 15
         ,plot.tag=element_text(size=80)
   ) +
-  labs(tag='A')
+  labs(tag='(a)')
 
 # Detection variance across species per observer
 plot2 <- ggplot(df, aes(x=variance, y=observer, fill=observer)) +
@@ -108,7 +108,7 @@ plot2 <- ggplot(df, aes(x=variance, y=observer, fill=observer)) +
   ) +
   scale_x_continuous(#breaks=seq(0,1,0.2),
                      limits=c(NA,3)) +
-  labs(tag='B')
+  labs(tag='(b)')
 
 # dev.off()
 tiff(paste('2_output/Fig.2_Observer-specific_detectability_and_variance.tif'), width=2286, height=1440, units='px', compression='lzw')
@@ -352,12 +352,57 @@ dev.off()
 
 
 
-#  Appendix 1 - Prior sensitivity analysis  ####
+#  Appendix 1 - Species-specific detectabilities, indices, and data summaries  ####
+
+beta1 <- output$sims.list$beta1; dim(beta1)
+beta2 <- output$sims.list$beta2; str(beta2)
+beta3 <- output$sims.list$beta3; str(beta3)
+
+# detectability per species*observer based on that species' conspicuousness & identifiability
+#    and ASSUMING NO EXPERIENCE
+detectability.logit <- array(NA, dim=c(nspecies,nobservers,dim(beta1)[1]),
+                       dimnames=list(dimnames(data$y)[[3]],
+                                     paste('obs',1:7,sep=''),
+                                     NULL)); dim(detectability.logit)
+for(k in 1:nspecies){
+  for(o in 1:nobservers){
+    detectability.logit[k,o,] <- beta1[,o,k] + beta2*data$conspicuousness[k] + beta3*data$identifiability[k]
+  }
+}
+detectability.logit[1:10,1:3,1:2]
+
+mean.detectability <- apply(detectability.logit, c(1,2), mean) %>% 
+  plogis() %>% 
+  round(3) %>% 
+  as.data.frame()
+
+# add species indices
+mean.detectability$consp <- data$conspicuousness
+mean.detectability$ident <- data$identifiability
+
+# add number of observed occurrences across all sites (max. 416) and across repeated-visit sites (max. 46)
+help1 <- apply(data$y, c(1,3), max, na.rm=TRUE); dim(help1)
+mean.detectability$Ntot <- apply(help1, 2, sum)
+mean.detectability$Nrep <- apply(help1[index,], 2, sum); head(mean.detectability)
+mean.detectability <- mean.detectability[,c(8:11,1:7)]; head(mean.detectability)
+
+# export
+write.table(mean.detectability, file="2_output/Appendix1_Table.S1_Species-specific_values.csv",sep=";", row.names=TRUE)
+
+# DETECTABILITIES ARE SUMMARIZED ACROSS ALL OBSERVERS
+mean.detectability <- mean.detectability[,5:11]
+mean.detectability$mean <- round(apply(mean.detectability[,1:7], 1, mean),3)
+mean.detectability$diff <- apply(mean.detectability[,1:7], 1, max) - apply(mean.detectability[,1:7], 1, min)
+
+
+
+
+#  Appendix 2 - Prior sensitivity analysis  ####
 
 ##  Illustrate priors themselves  ##
 
 # priors 1
-tiff('2_output/Appendix1_Fig.S1_Illustration_of_prior1.tif', width=1200, height=400, units='px')
+tiff('2_output/Appendix2_Fig.S1_Illustration_of_prior1.tif', width=1200, height=400, units='px')
 par(mfrow=c(1,3))
 x0 <- rcauchy(100000, scale=2.5)
 hist(x0, main='prior used\nrcauchy(scale=2.5)',
@@ -382,7 +427,7 @@ dev.off()
 
 
 # priors 2
-tiff('2_output/Appendix1_Fig.S2_Illustration_of_prior2.tif', width=1200, height=400, units='px')
+tiff('2_output/Appendix2_Fig.S2_Illustration_of_prior2.tif', width=1200, height=400, units='px')
 par(mfrow=c(1,3))
 x0 <- rhalfcauchy(100000, scale=2.25)
 hist(x0, main='prior used\nrcauchy(scale=2.25)',
@@ -427,7 +472,7 @@ df <- rbind(out0, out1, out2)
 params <- colnames(out0[,1:32])
 
 # dev.off()
-tiff('2_output/Appendix1_Fig.S3_Prior_sensitivity_assessment.tif', width=1900, height=1100, units='px', compression='lzw')
+tiff('2_output/Appendix2_Fig.S3_Prior_sensitivity_assessment.tif', width=1900, height=1100, units='px', compression='lzw')
 par(mfrow=c(4,8), mar=c(4,4,3,1))
 for(i in 1:length(params)){
   boxplot(df[,params[i]] ~ df$prior, las=1, pch=20, cex.lab=1.2, cex.axis=2,
@@ -444,79 +489,7 @@ load('2_output/output.jags_model.RData')
 
 
 
-#  Appendix 2 - Observer*species-specific detectabilities  ####
-
-beta1 <- output$sims.list$beta1; dim(beta1)
-beta2 <- output$sims.list$beta2; str(beta2)
-
-# detectability per species*observer based on that species conspicuousness
-#    and ASSUMING NO EXPERIENCE and identifiability=0 (i.e. average identifiability)
-detectability <- array(NA, dim=c(nspecies,nobservers,dim(beta1)[1]),
-                       dimnames=list(dimnames(data$y)[[3]],
-                                     paste('obs',1:7,sep=''),
-                                     NULL)); dim(detectability)
-for(k in 1:nspecies){
-  for(o in 1:nobservers){
-    detectability[k,o,] <- beta1[,o,k] + beta2*data$conspicuousness[k] #  + beta4*1
-  }
-}
-detectability[1:10,1:3,1:2]
-
-# DETECTABILITIES ARE SUMMARIZED ACROSS ALL OBSERVERS
-mean.detectability <- apply(detectability, c(1,2), mean) %>% 
-  plogis() %>% 
-  round(3) %>% 
-  as.data.frame()
-
-# export
-write.table(mean.detectability, file="2_output/Appendix2_Table.S1_Observer-species-specific-detectabilities.csv",sep=";", row.names=TRUE)
-
-mean.detectability$mean <- round(apply(mean.detectability[,1:7], 1, mean),3)
-mean.detectability$diff <- apply(mean.detectability[,1:7], 1, max) - apply(mean.detectability[,1:7], 1, min)
-
-
-
-
-#  Appendix 3 - Species richness per site  ####
-
-start <- match("N.est.1", colnames(out))
-end <- match("N.est.416", colnames(out))
-N.est <- apply(out[,start:end], 2, mean)
-
-start <- match("n.occ.est.1", colnames(out))
-end <- match("n.occ.est.373", colnames(out))
-n.occ.est <- apply(out[,start:end], 2, mean)
-
-N.obs <- apply(data$y[,1,], 1, sum)
-n.occ.obs <- apply(data$y[,1,], 2, sum)
-
-# Species richness per site  ##
-# dev.off()
-tiff(paste('2_output/Appendix3_Fig.S1_Species_richness_per_site.tif'), width=2000, height=1000, units='px', compression='lzw')
-par(mfrow=c(1,1), mar=c(8,8,2,1))
-plot(x=1:nsites, y=sort(N.obs, decreasing=T),
-     type='h', lwd=3,
-     xlab='', ylab='', axes=F,
-     xlim=c(0, 420),
-     ylim=c(0, max(N.est)),
-     frame=F, las=1)
-axis(side=1, at=seq(0, 400, 100), pos=-3, cex.axis=2.5, padj=0.5)
-axis(side=2, at=seq(0, 80, 20), pos=-10, cex.axis=2.5, padj=0.5, las=1)
-mtext('Sites (ranked by observed species richness)', side=1, line=5, cex=3)
-mtext('Species richness per site', side=2, line=3.5, cex=3)
-points(x=1:nsites, y=N.est[order(N.obs, decreasing=T)],
-       type='h', lwd=3, col='grey')
-points(x=1:nsites, y=sort(N.obs, decreasing=T),
-       type='h', lwd=3)
-legend(x=320, y=80, xjust=0, yjust=0.5, bty='n',lty=1, lwd=3, cex=2.6,
-       col=c('grey','black'),
-       legend=c('estimated','observed'))
-dev.off()
-
-
-
-
-#  Appendix 4 - Posterior predictive checks (Bayesian p-values)  ####
+#  Appendix 3 - Posterior predictive checks (Bayesian p-values)  ####
 
 load('2_output/output.jags_model_gof.RData')
 ifelse(sum(unlist(output$Rhat) > 1.1)==0, paste("Successful convergence based on Rhat values (all < 1.1)."), paste("Rhat values indicate convergence failure."))
@@ -527,7 +500,7 @@ params.titles <- colnames(out)
 
 
 # set threshold
-# threshold <- 0.05 # often deemed to restrictive
+# threshold <- 0.05 # often deemed too restrictive
 threshold <- 0.1  # more conservative and reliable
 
 
@@ -536,6 +509,7 @@ start <- match("p.mean.1", colnames(out))
 end <- match("p.mean.373", colnames(out))
 p.means <- output$summary[start:end, "mean"]
 
+tiff('2_output/Appendix3_Fig.S4_Posterior_predictive_check.tif', width=1100, height=518, units='px', compression='lzw')
 par(mfrow=c(1,2), mar=c(3,5,5,1))
 hist(p.means, breaks=51, xlim=c(0,1), las=1, cex.lab=1.2, cex.axis=1.1, xlab='',
      main="Bayesian p-value for \nmean number of detections per species")
@@ -565,6 +539,7 @@ hist(p.cvs, breaks=50, xlim=c(0,1), las=1, cex.lab=1.2, cex.axis=1.1, xlab='',
 abline(v=c(threshold,(1-threshold)), col="red", lwd=2)
 text(x=0, y=2, labels=sum(p.cvs<=threshold), pos=3, cex=1.1, col="red")
 text(x=1, y=2, labels=sum(p.cvs>=(1-threshold)), pos=3, cex=1.1, col="red")
+dev.off()
 
 # which species lie outside the acceptable range?
 which(p.cvs<threshold|p.cvs>=(1-threshold))
@@ -581,6 +556,48 @@ enframe(n.occ.obs, name="var")[which(p.cvs>=(1-threshold)),]
 
 
 
+#  Appendix 4 - Estimated species richness per site  ####
+
+load('2_output/output.jags_model.RData')
+out <- data.frame(output$sims.list)
+
+start <- match("N.est.1", colnames(out))
+end <- match("N.est.416", colnames(out))
+N.est <- apply(out[,start:end], 2, mean)
+
+start <- match("n.occ.est.1", colnames(out))
+end <- match("n.occ.est.373", colnames(out))
+n.occ.est <- apply(out[,start:end], 2, mean)
+
+N.obs <- apply(data$y[,1,], 1, sum)
+n.occ.obs <- apply(data$y[,1,], 2, sum)
+
+# Species richness per site  ##
+# dev.off()
+tiff(paste('2_output/Appendix4_Fig.S5_Estimated_species_richness_per_site.tif'), width=2000, height=1000, units='px', compression='lzw')
+par(mfrow=c(1,1), mar=c(8,8,2,1))
+plot(x=1:nsites, y=sort(N.obs, decreasing=T),
+     type='h', lwd=3,
+     xlab='', ylab='', axes=F,
+     xlim=c(0, 420),
+     ylim=c(0, max(N.est)),
+     frame=F, las=1)
+axis(side=1, at=seq(0, 400, 100), pos=-3, cex.axis=2.5, padj=0.5)
+axis(side=2, at=seq(0, 80, 20), pos=-10, cex.axis=2.5, padj=0.5, las=1)
+mtext('Sites (ranked by observed species richness)', side=1, line=5, cex=3)
+mtext('Species richness per site', side=2, line=3.5, cex=3)
+points(x=1:nsites, y=N.est[order(N.obs, decreasing=T)],
+       type='h', lwd=3, col='grey')
+points(x=1:nsites, y=sort(N.obs, decreasing=T),
+       type='h', lwd=3)
+legend(x=320, y=80, xjust=0, yjust=0.5, bty='n',lty=1, lwd=3, cex=2.6,
+       col=c('grey','black'),
+       legend=c('estimated','observed'))
+dev.off()
+
+
+
+
 #  Summary numbers for manuscript  ####
 
 # RESULTS
@@ -593,14 +610,14 @@ quantile(plogis(out$mu.alpha0), probs=c(0.025,0.975)) %>% round(3)
 mean(plogis(out$mu.alpha0 + out$alpha1)) %>% round(3)
 quantile(plogis(out$mu.alpha0 + out$alpha1), probs=c(0.025,0.975)) %>% round(3)
 
-# observer-specific detectabilities as transformed from table 1
+# observer-specific detection probabilities as transformed from table 1
 #   this is the intercept only: conspicuousness=0 and experience=0
 output$summary[16:22,c(1,3,7)] %>% 
   plogis() %>% 
   round(3)
 
 # species with the smallest difference between observers
-#   taking species conspicuousness into account, but assuming experience=0
+#   taking species conspicuousness and identifiability into account, but assuming experience=0
 mean.detectability %>% filter(diff == min(mean.detectability$diff))
 mean.detectability %>% filter(diff < 0.20) %>% arrange(diff)
 
@@ -642,6 +659,9 @@ for(o in 1:7){
 # across the 'regular' first 6 observers
 help1 <- apply(p.over.time[,1:6,,], c(1,3,4), mean); dim(help1)
 help2 <- apply(help1, c(2,3), mean); dim(help2)
+
+# change of percentage of species people have experience with
+apply(experience.gained[,1:6,], 3, mean)
 
 # at the start of the study (less experience)
 mean(help2['start',]) %>% round(3)
